@@ -1,0 +1,13 @@
+﻿<Application x:Class="EndOfOrder.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:EndOfOrder"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+
+        <ImageBrush x:Key="Tile.Floor.Blue.Off" ImageSource="Images/Tiles/Floor.blue.off.png"/>
+        <ImageBrush x:Key="Tile.Floor.Blue" ImageSource="Images/Tiles/Floor.blue.png"/>
+        <ImageBrush x:Key="Tile.Wall.Blue" ImageSource="Images/Tiles/Wall.blue..png"/>
+        
+    </Application.Resources>
+</Application>
