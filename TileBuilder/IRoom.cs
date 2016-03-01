@@ -9,14 +9,14 @@ namespace TileBuilder
     public interface IRoom
     {
         /// <summary>
-        /// Room width in tiles.
+        /// Room location.
         /// </summary>
-        int Width { get; }
+        UnitCoord Location { get; }
 
         /// <summary>
-        /// Room height in tiles.
+        /// Room size.
         /// </summary>
-        int Height { get; }
+        UnitSize Size { get; }
 
         /// <summary>
         /// Get the tile at the given coordinates (<paramref name="x"/>, <paramref name="y"/>).

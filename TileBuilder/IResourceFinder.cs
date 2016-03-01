@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace TileBuilder
 {
@@ -27,7 +26,7 @@ namespace TileBuilder
         /// </summary>
         /// <param name="a_name">Background brush name.</param>
         /// <returns>Background brush.</returns>
-        Brush FindBackground(string a_name);
+        IResource FindBackground(string a_name);
     }
 
     public interface IResource

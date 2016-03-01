@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using TileBuilder;
 
 namespace EndOfOrder.Story
@@ -58,7 +51,7 @@ namespace EndOfOrder.Story
         /// </summary>
         /// <param name="a_name">Background brush name.</param>
         /// <returns>Background brush.</returns>
-        public Brush FindBackground(string a_name)
+        public IResource FindBackground(string a_name)
         {
             var assembly = Assembly.GetExecutingAssembly();
 
@@ -70,21 +63,9 @@ namespace EndOfOrder.Story
             if (name == null)
                 return null;
 
-            var stream = assembly.GetManifestResourceStream(name);
+            return new AssemblyResource(assembly, name);
 
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.StreamSource = stream;
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.EndInit();
-            bitmap.Freeze();
 
-            var imageBrush = new ImageBrush
-            {
-                ImageSource = bitmap,
-            };
-
-            return imageBrush;
         }
     }
 

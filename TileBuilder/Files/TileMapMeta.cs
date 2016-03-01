@@ -8,14 +8,14 @@ namespace TileBuilder.Files
         public int Version { get; set; }
 
         /// <summary>
-        /// Width of the map in rooms.
+        /// Size of map in rooms.
         /// </summary>
-        public int MapWidth { get; set; }
+        public UnitSize MapSize { get; set; }
 
         /// <summary>
-        /// Width of the map in rooms.
+        /// Size of rooms in tiles.
         /// </summary>
-        public int MapHeight { get; set; }
+        public UnitSize RoomSize { get; set; }
 
         /// <summary>
         /// Count of rooms in map.

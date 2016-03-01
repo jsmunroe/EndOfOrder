@@ -1,20 +1,20 @@
-﻿namespace TileBuilder
+namespace TileBuilder
 {
-    public interface ITile
+    public class Tile : ITile
     {
         /// <summary>
         /// Tile identifier.
         /// </summary>
-        int ID { get; }
+        public int ID { get; set; }
 
         /// <summary>
         /// Tile background sprite name.
         /// </summary>
-        string Background { get; }
+        public string Background { get; set; }
 
         /// <summary>
         /// Whether or not this tile is passible.
         /// </summary>
-        bool IsPassible { get; }
+        public bool IsPassible { get; set; }
     }
 }

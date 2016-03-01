@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -48,6 +49,10 @@ namespace TileBuilder.Files
             }
         }
 
+        /// <summary>
+        /// Initialization state.
+        /// </summary>
+        public NameValueCollection State { get; } = new NameValueCollection();
 
         /// <summary>
         /// Read the meta data.
@@ -67,6 +72,7 @@ namespace TileBuilder.Files
                 if (_meta.Version == 0)
                 {
                     ReadStart_0(reader, _meta);
+                    ReadValues_0(reader, State);
                 }
             }
         }
@@ -112,8 +118,30 @@ namespace TileBuilder.Files
             a_meta.StartMapName = startMatch.Groups["map"].Value;
             a_meta.StartRoomX = int.Parse(startMatch.Groups["x"].Value);
             a_meta.StartRoomY = int.Parse(startMatch.Groups["y"].Value);
+            
         }
 
+        /// <summary>
+        /// Read initialization values.
+        /// </summary>
+        /// <param name="a_reader"></param>
+        /// <param name="a_state"></param>
+        private void ReadValues_0(StreamReader a_reader, NameValueCollection a_state)
+        {
+            var line = a_reader.ReadLine();
+
+            var rexValueLine = new Regex(@"^(?<name>\w+)\t(?<value>.*)", RegexOptions.Compiled);
+            while (line != null)
+            {
+                var match = rexValueLine.Match(line);
+                if (match.Success)
+                {
+                    
+                }
+
+                line = a_reader.ReadLine();
+            }
+        }
     }
 
     public class GameInitMeta

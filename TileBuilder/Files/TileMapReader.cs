@@ -15,6 +15,8 @@ namespace TileBuilder.Files
 
         private TileMapMeta _meta;
 
+        private TilesetMeta _tilesetMeta;
+
         private readonly List<RoomMeta> _roomMetas = new List<RoomMeta>();
 
         private static readonly Regex s_rexHeader = new Regex(@"^TileMap\t(?<version>\d*)", RegexOptions.Compiled);
@@ -89,10 +91,10 @@ namespace TileBuilder.Files
             if (_meta == null)
                 ReadMeta();
 
-            var roomMeta = _roomMetas.FirstOrDefault(i => i.RoomX == x && i.RoomY == y);
+            var roomMeta = _roomMetas.FirstOrDefault(i => i.RoomLocation.X == x  && i.RoomLocation.Y == y);
 
             if (roomMeta == null)
-                return new NullRoom();
+                return new Room(new UnitCoord(x, y), Meta.RoomSize);
 
             using (var stream = _resource.Open())
             {
@@ -101,6 +103,28 @@ namespace TileBuilder.Files
                 var room = ReadRoom_0(reader, roomMeta);
                 return room;
             }
+        }
+
+        /// <summary>
+        /// Read teh tileset.
+        /// </summary>
+        /// <returns></returns>
+        public ITileset ReadTileset()
+        {
+            if (_meta == null)
+                ReadMeta();
+
+            if (_tilesetMeta == null)
+                return new Tileset();
+
+            using (var stream = _resource.Open())
+            {
+                var reader = new AdvancedStreamReader(stream);
+
+                var tileset = ReadTileset_0(reader, _tilesetMeta);
+                return tileset;
+            }
+
         }
 
         /// <summary>
@@ -129,7 +153,7 @@ namespace TileBuilder.Files
         /// <param name="a_reader">Text reader.</param>
         /// <param name="a_lineName">Line name to show if an exception is encountered.</param>
         /// <returns>Integer coordinate array of size 2.</returns>
-        private int[] ReadNextCoord(AdvancedStreamReader a_reader, string a_lineName)
+        private UnitCoord ReadNextCoord(AdvancedStreamReader a_reader, string a_lineName)
         {
             var mapSizeLine = a_reader.ReadLine();
 
@@ -141,11 +165,34 @@ namespace TileBuilder.Files
             if (!mapSizeMatch.Success)
                 throw new TileMapSchemaException("Bad" + a_lineName); // Badly formatted map size line.
 
-            return new[]
-            {
+            return new UnitCoord(
                 int.Parse(mapSizeMatch.Groups["x"].Value),
-                int.Parse(mapSizeMatch.Groups["y"].Value)
-            };
+                int.Parse(mapSizeMatch.Groups["y"].Value));
+
+        }
+
+        /// <summary>
+        /// Read the next line and convert it to a coordinate if possible (<paramref name="a_reader"/>)
+        /// </summary>
+        /// <param name="a_reader">Text reader.</param>
+        /// <param name="a_lineName">Line name to show if an exception is encountered.</param>
+        /// <returns>Integer coordinate array of size 2.</returns>
+        private UnitSize ReadNextSize(AdvancedStreamReader a_reader, string a_lineName)
+        {
+            var mapSizeLine = a_reader.ReadLine();
+
+            if (mapSizeLine == null)
+                throw new TileMapSchemaException("No" + a_lineName); // Map size line does not exist.
+
+            var mapSizeMatch = s_rexOrtho.Match(mapSizeLine);
+
+            if (!mapSizeMatch.Success)
+                throw new TileMapSchemaException("Bad" + a_lineName); // Badly formatted map size line.
+
+            return new UnitSize(
+                int.Parse(mapSizeMatch.Groups["x"].Value),
+                int.Parse(mapSizeMatch.Groups["y"].Value));
+
         }
 
         /// <summary>
@@ -155,11 +202,8 @@ namespace TileBuilder.Files
         /// <param name="a_meta">Meta data structure.</param>
         private void ReadMeta_0(AdvancedStreamReader a_reader, TileMapMeta a_meta)
         {
-            var mapSize = ReadNextCoord(a_reader, "MapSizeLine");
-
-            a_meta.MapWidth = mapSize[0];
-            a_meta.MapHeight = mapSize[1];
-
+            a_meta.MapSize = ReadNextSize(a_reader, "MapSizeLine");
+            a_meta.RoomSize = ReadNextSize(a_reader, "RoomSizeLine");
         }
 
         /// <summary>
@@ -172,7 +216,9 @@ namespace TileBuilder.Files
             var line = a_reader.ReadLine();
             while (line != null)
             {
-                if (line == "ROOM")
+                if (line == "*Tileset")
+                    ReadTilesetMeta_0(a_reader, pos);
+                else if (line == "*Room")
                     ReadRoomMeta_0(a_reader, pos);
 
                 pos = a_reader.CharacterPosition;
@@ -188,25 +234,54 @@ namespace TileBuilder.Files
         private void ReadRoomMeta_0(AdvancedStreamReader a_reader, long a_pos)
         {
             var coords = ReadNextCoord(a_reader, "RoomCoordLine");
-            var size = ReadNextCoord(a_reader, "RoomSizeLine");
 
-            var room = new RoomMeta
+            var roomMeta = new RoomMeta
             {
                 FilePosition = a_pos,
-                RoomX = coords[0],
-                RoomY = coords[1],
-                RoomWidth = size[0],
-                RoomHeight = size[1],
+                RoomLocation = coords,
+                RoomSize = Meta.RoomSize,
             };
 
-            _roomMetas.Add(room);
+            _roomMetas.Add(roomMeta);
+
+            FeedToLabel(a_reader, "/Room");
+        }
+
+        /// <summary>
+        /// Read the tileset meta data from the given text reader (<paramref name="a_reader"/>).
+        /// </summary>
+        /// <param name="a_reader">Text reader.</param>
+        /// <param name="a_pos">File position.</param>
+        private void ReadTilesetMeta_0(AdvancedStreamReader a_reader, long a_pos)
+        {
+            var tilesetMeta = new TilesetMeta
+            {
+                FilePosition = a_pos,
+            };
+
+            _tilesetMeta = tilesetMeta;
+
+            FeedToLabel(a_reader, "/Tileset");
+        }
+
+        /// <summary>
+        /// Feed to the given label (<paramref name="a_label"/>).
+        /// </summary>
+        /// <param name="a_reader">Text reader.</param>
+        /// <param name="a_label">Label.</param>
+        private static void FeedToLabel(AdvancedStreamReader a_reader, string a_label)
+        {
+            var line = a_reader.ReadLine();
+            while (line != null && !line.StartsWith(a_label))
+                line = a_reader.ReadLine();
         }
 
         /// <summary>
         /// Read the room from the given text reader (<paramref name="a_reader"/>).
         /// </summary>
         /// <param name="a_reader">Text reader.</param>
-        /// <param name="a_meta">File position.</param>
+        /// <param name="a_meta">Room meta data.</param>
+        /// <returns>Room that was read.</returns>
         private IRoom ReadRoom_0(AdvancedStreamReader a_reader, RoomMeta a_meta)
         {
             a_reader.SeekCharacter(a_meta.FilePosition);
@@ -214,16 +289,16 @@ namespace TileBuilder.Files
             // Read past meta data
             var header = a_reader.ReadLine();
             var roomCoord = a_reader.ReadLine();
-            var roomSize = a_reader.ReadLine();
 
             var room = new Room(a_meta);
+            var tileset = ReadTileset();
 
-            for (var y = 0; y < a_meta.RoomHeight; y++)
+            for (var y = 0; y < Meta.RoomSize.Height; y++)
             {
                 var tileLine = a_reader.ReadLine();
 
                 if (tileLine == null)
-                    return new NullRoom();
+                    return new Room(a_meta);
 
                 var tiles = tileLine.Split('\t');
 
@@ -233,10 +308,7 @@ namespace TileBuilder.Files
                     if (!int.TryParse(tiles[x], out tileID))
                         continue;
 
-                    var tile = new Tile
-                    {
-                        Background = tileID,
-                    };
+                    var tile = tileset.GetTile(tileID);
 
                     room.SetTile(x, y, tile);
                 }
@@ -245,145 +317,53 @@ namespace TileBuilder.Files
             return room;
         }
 
-
-
-
-
-
-
-        public class Room : IRoom
-        {
-            private readonly ITile[,] _tiles;
-
-            /// <summary>
-            /// Constructor.
-            /// </summary>
-            /// <param name="a_meta">Room meta data.</param>
-            /// <exception cref="ArgumentNullException">Thrown if <paramref name="a_meta"/> is null.</exception>
-            public Room(RoomMeta a_meta)
-            {
-                #region Argument Validation
-
-                if (a_meta == null)
-                    throw new ArgumentNullException(nameof(a_meta));
-
-                #endregion
-
-                Width = a_meta.RoomWidth;
-                Height = a_meta.RoomHeight;
-
-                _tiles = new ITile[a_meta.RoomWidth, a_meta.RoomHeight];
-            }
-
-            /// <summary>
-            /// Room width in tiles.
-            /// </summary>
-            public int Width { get; }
-
-            /// <summary>
-            /// Room height in tiles.
-            /// </summary>
-            public int Height { get; }
-
-            /// <summary>
-            /// Get the tile at the given coordinates (<paramref name="x"/>, <paramref name="y"/>).
-            /// </summary>
-            /// <param name="x">X coordinate.</param>
-            /// <param name="y">Y coordinate.</param>
-            /// <returns>Tile of the room.</returns>
-            public ITile GetTile(int x, int y)
-            {
-                if (x < 0 || x >= Width || y < 0 || y >= Height)
-                    return new NullTile();
-
-                return _tiles[x, y] ?? new NullTile();
-            }
-
-            /// <summary>
-            /// Set the given tile to the given coordinates (<paramref name="x"/>, <paramref name="y"/>).
-            /// </summary>
-            /// <param name="x">X coordinate.</param>
-            /// <param name="y">Y coordinate.</param>
-            /// <param name="a_tile">Tile of the room.</param>
-            public void SetTile(int x, int y, ITile a_tile)
-            {
-                if (x < 0 || x >= Width || y < 0 || y >= Height)
-                    return;
-
-                _tiles[x, y] = a_tile;
-            }
-        }
-
-        public class Tile : ITile
-        {
-            /// <summary>
-            /// Tile background identifier.
-            /// </summary>
-            public int Background { get; set; }
-
-            /// <summary>
-            /// Whether or not this tile is passible.
-            /// </summary>
-            public bool IsPassible { get; set; }
-        }
-
-
-
-
-
-
-        #region NullRoom
-
         /// <summary>
-        /// Room returned if the room coordinates are invalid.
+        /// Read the tileset from the given text reader (<paramref name="a_reader"/>).
         /// </summary>
-        public class NullRoom : IRoom
+        /// <param name="a_reader">Text reader.</param>
+        /// <param name="a_meta">Tileset meta data.</param>
+        /// <returns>Tileset that was read.</returns>
+        private ITileset ReadTileset_0(AdvancedStreamReader a_reader, TilesetMeta a_meta)
         {
-            /// <summary>
-            /// Room width in tiles.
-            /// </summary>
-            public int Width { get; } = 10;
+            a_reader.SeekCharacter(a_meta.FilePosition);
 
-            /// <summary>
-            /// Room height in tiles.
-            /// </summary>
-            public int Height { get; } = 10;
+            // read past meta data.
+            var header = a_reader.ReadLine();
 
-            /// <summary>
-            /// Get the tile at the given coordinates (<paramref name="x"/>, <paramref name="y"/>).
-            /// </summary>
-            /// <param name="x">X coordinate.</param>
-            /// <param name="y">Y coordinate.</param>
-            /// <returns>Tile of the room.</returns>
-            public ITile GetTile(int x, int y)
+            var regTileRef = new Regex(@"^(?<id>\d*)\t(?<name>[\w\.]*)\t(?<passible>[10])", RegexOptions.Compiled);
+
+            var tileset = new Tileset();
+            var line = a_reader.ReadLine();
+            while (line != null && line != "/Tileset")
             {
-                return new NullTile();
+                var match = regTileRef.Match(line);
+
+                if (match.Success)
+                {
+                    var id = int.Parse(match.Groups["id"].Value);
+                    var name = match.Groups["name"].Value;
+                    var passible = match.Groups["passible"].Value == "1";
+
+                    var tile = new Tile
+                    {
+                        ID = id,
+                        Background = name,
+                        IsPassible = passible,
+                    };
+
+                    tileset.SetTile(tile);
+                }
+
+                line = a_reader.ReadLine();
             }
+
+            return tileset;
         }
-
-        /// <summary>
-        /// Tile returned from a <see cref="NullRoom"/>.
-        /// </summary>
-        public class NullTile : ITile
-        {
-            /// <summary>
-            /// Tile background identifier.
-            /// </summary>
-            public int Background { get; set; } = 0;
-
-            /// <summary>
-            /// Whether or not this tile is passible.
-            /// </summary>
-            public bool IsPassible { get; set; } = false;
-        } 
-
-        #endregion
-
     }
 
     public class TileMapSchemaException : Exception
     {
-        public TileMapSchemaException(String a_error) 
+        public TileMapSchemaException(string a_error) 
             : base(a_error)
         {
             
