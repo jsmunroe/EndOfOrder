@@ -1,4 +1,5 @@
 using System;
+using TileBuilder.Contracts;
 using TileBuilder.Files;
 
 namespace TileBuilder
@@ -52,6 +53,16 @@ namespace TileBuilder
 
 
         /// <summary>
+        /// Get the tile at the given coordinates (<paramref name="a_coord"/>).
+        /// </summary>
+        /// <param name="a_coord">Coordiantes.</param>
+        /// <returns>Tile of the room.</returns>
+        public ITile GetTile(UnitCoord a_coord)
+        {
+            return GetTile(a_coord.X, a_coord.Y);
+        }
+
+        /// <summary>
         /// Get the tile at the given coordinates (<paramref name="x"/>, <paramref name="y"/>).
         /// </summary>
         /// <param name="x">X coordinate.</param>
@@ -59,10 +70,31 @@ namespace TileBuilder
         /// <returns>Tile of the room.</returns>
         public ITile GetTile(int x, int y)
         {
-            if (x < 0 || x >= Size.Width || y < 0 || y >= Size.Height)
+            if (!InRoom(x, y))
                 return NullTile;
 
             return _tiles[x, y] ?? NullTile;
+        }
+
+        /// <summary>
+        /// Get whether the given tile coordinates is in this room (<paramref name="a_coord"/>).
+        /// </summary>
+        /// <param name="a_coord">Coordinates.</param>
+        /// <returns>True if the coordinate is still in the room.</returns>
+        public bool InRoom(UnitCoord a_coord)
+        {
+            return InRoom(a_coord.X, a_coord.Y);
+        }
+
+        /// <summary>
+        /// Get whether the given tile coordinates is in this room (<paramref name="x"/>, <paramref name="y"/>).
+        /// </summary>
+        /// <param name="x">X coordinate.</param>
+        /// <param name="y">Y coordinate.</param>
+        /// <returns>True if the coordinate is still in the room.</returns>
+        public bool InRoom(int x, int y)
+        {
+            return (x >= 0 && x < Size.Width && y >= 0 && y < Size.Height);
         }
 
         /// <summary>
@@ -73,7 +105,7 @@ namespace TileBuilder
         /// <param name="a_tile">Tile of the room.</param>
         public void SetTile(int x, int y, ITile a_tile)
         {
-            if (x < 0 || x >= Size.Width || y < 0 || y >= Size.Height)
+            if (!InRoom(x, y))
                 return;
 
             _tiles[x, y] = a_tile;

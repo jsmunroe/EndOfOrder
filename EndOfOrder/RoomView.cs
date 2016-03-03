@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -7,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using EndOfOrder.Story;
 using TileBuilder;
+using TileBuilder.Contracts;
+using TileBuilder.Contracts.Ui;
 using TileBuilder.Files;
 
 namespace EndOfOrder
@@ -14,10 +17,6 @@ namespace EndOfOrder
     public class RoomView : Grid, IRoomView
     {
         private UnitCoord _roomLocation = new UnitCoord();
-
-        private Dictionary<string, Brush> _brushesByName = new Dictionary<string, Brush>();
-
-        private IResource _tileMap;
 
         /// <summary>
         /// Constructor.
@@ -72,7 +71,7 @@ namespace EndOfOrder
                     var border = new Border
                     {
                         Visibility = Visibility.Visible,
-                        Background = LookUpTileBackground(tile.Background),
+                        Background = ResourceProvider.Current.GetBrush(tile.Background),
                     };
 
                     Grid.SetColumn(border, x);
@@ -83,68 +82,24 @@ namespace EndOfOrder
             }
         }
 
-
         /// <summary>
-        /// Look up a tile background with the given tile name (<paramref name="a_resourceName"/>).
+        /// Show the given character in room (<paramref name="a_character"/>) in this view.
         /// </summary>
-        /// <param name="a_resourceName">Resource name.</param>
-        /// <returns>Tile background brush.</returns>
-        private Brush LookUpTileBackground(string a_resourceName)
+        /// <param name="a_character">Character.</param>
+        public void ShowCharacter(ICharacter a_character)
         {
-            if (a_resourceName == null)
-                return null;
-
-            if (_brushesByName.ContainsKey(a_resourceName))
-                return _brushesByName[a_resourceName];
-
-            var resource = Game.ResourceFinder.FindBackground(a_resourceName);
-
-            if (resource == null)
-                return null;
-
-            var brush = CreateBrush(resource);
-
-            if (brush != null)
-                _brushesByName[a_resourceName] = brush;
-
-            return brush;
+            Children.Add(new CharacterControl(a_character));
         }
 
         /// <summary>
-        /// Create a brush from the given resource (<paramref name="a_resource"/>).
+        /// Update the position of the given character in the room (<paramref name="a_character"/>) in this view.
         /// </summary>
-        /// <param name="a_resource">Resource.</param>
-        /// <returns>Brush.</returns>
-        private Brush CreateBrush(IResource a_resource)
+        /// <param name="a_character">Character.</param>
+        public void UpdateCharacter(ICharacter a_character)
         {
-            using (var stream = a_resource.Open())
-            {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.StreamSource = stream;
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
+            var control = Children.OfType<CharacterControl>().FirstOrDefault(i => ReferenceEquals(i.Character, a_character));
 
-                var imageBrush = new ImageBrush
-                {
-                    ImageSource = bitmap,
-                };
-
-                return imageBrush;
-            }
-        }
-
-        public void HandleKey(Key a_key)
-        {
-            if (a_key == Key.W)
-                Game.World.GotoRoom(_roomLocation.X, _roomLocation.Y - 1);
-            else if (a_key == Key.S)
-                Game.World.GotoRoom(_roomLocation.X, _roomLocation.Y + 1);
-            else if (a_key == Key.A)
-                Game.World.GotoRoom(_roomLocation.X - 1, _roomLocation.Y);
-            else if (a_key == Key.D)
-                Game.World.GotoRoom(_roomLocation.X + 1, _roomLocation.Y);
+            control?.Update();
         }
 
     }

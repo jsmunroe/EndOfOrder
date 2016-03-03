@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using TileBuilder.Contracts;
 
 namespace TileBuilder.Files
 {

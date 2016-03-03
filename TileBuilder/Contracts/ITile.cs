@@ -1,4 +1,4 @@
-﻿namespace TileBuilder
+﻿namespace TileBuilder.Contracts
 {
     public interface ITile
     {

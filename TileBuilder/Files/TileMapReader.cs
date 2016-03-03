@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Helpers.IO;
+using TileBuilder.Contracts;
 
 namespace TileBuilder.Files
 {

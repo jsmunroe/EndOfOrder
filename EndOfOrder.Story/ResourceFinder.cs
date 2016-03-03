@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using TileBuilder;
+using TileBuilder.Contracts;
 
 namespace EndOfOrder.Story
 {
@@ -51,7 +52,7 @@ namespace EndOfOrder.Story
         /// </summary>
         /// <param name="a_name">Background brush name.</param>
         /// <returns>Background brush.</returns>
-        public IResource FindBackground(string a_name)
+        public IResource FindImage(string a_name)
         {
             var assembly = Assembly.GetExecutingAssembly();
 

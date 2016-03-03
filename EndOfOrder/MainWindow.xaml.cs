@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using TileBuilder;
 
 namespace EndOfOrder
 {
@@ -34,7 +35,15 @@ namespace EndOfOrder
         /// <param name="e">The <see cref="T:System.Windows.Input.KeyEventArgs"/> that contains the event data.</param>
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            RoomView.HandleKey(e.Key);
+            if (e.Key == Key.W)
+                Game.Player.MoveNorth();
+            else if (e.Key == Key.S)
+                Game.Player.MoveSouth();
+            else if (e.Key == Key.A)
+                Game.Player.MoveWest();
+            else if (e.Key == Key.D)
+                Game.Player.MoveEast();
+
             base.OnKeyDown(e);
         }
     }

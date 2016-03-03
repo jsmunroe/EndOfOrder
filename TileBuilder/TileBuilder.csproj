@@ -44,16 +44,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Character.cs" />
+    <Compile Include="Contracts\Ui\ICharacter.cs" />
+    <Compile Include="Contracts\Ui\IRoomView.cs" />
     <Compile Include="Files\GameInitReader.cs" />
     <Compile Include="Files\RoomMeta.cs" />
     <Compile Include="Files\TileMapMeta.cs" />
     <Compile Include="Files\Tileset.cs" />
     <Compile Include="Files\TilesetMeta.cs" />
     <Compile Include="Game.cs" />
-    <Compile Include="IResourceFinder.cs" />
-    <Compile Include="IRoom.cs" />
-    <Compile Include="ITile.cs" />
-    <Compile Include="ITilesetReference.cs" />
+    <Compile Include="Contracts\IResourceFinder.cs" />
+    <Compile Include="Contracts\IRoom.cs" />
+    <Compile Include="Contracts\ITile.cs" />
+    <Compile Include="Contracts\ITilesetReference.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Files\TileMapReader.cs" />
     <Compile Include="AssemblyResource.cs" />

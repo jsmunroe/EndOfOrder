@@ -1,3 +1,5 @@
+using TileBuilder.Contracts;
+
 namespace TileBuilder
 {
     public class Tile : ITile
